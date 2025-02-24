@@ -15,7 +15,12 @@
 #   You should have received a copy of the GNU Library General Public     
 #   License along with this program; if not, write to the Free Software   
 #   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  
-#   USA                                                                   
+#   USA                               
+#
+#	REVISIONS:
+#	1.1
+#		* Fix deprecated refernece to activated signal on QComboBox which broke Linux FC.
+#		* Fix deprecated proxy warning in FC 1.x.
 
 import FreeCAD, Part, math, os
 from FreeCAD import Base
@@ -213,10 +218,10 @@ class TMThreadShaft:		#######################################################
 		if initprops[0] == "Custom": obj.setEditorMode("TolCrest", 2)
 
 		# Make attachable
-		if int(FreeCAD.Version()[1]) >= 19:
-			obj.addExtension('Part::AttachExtensionPython')
-		else:
+		if int(FreeCAD.Version()[0]) == 0 and int(FreeCAD.Version()[1]) < 19:
 			obj.addExtension('Part::AttachExtensionPython', obj)
+		else:
+			obj.addExtension('Part::AttachExtensionPython')
 
 		self.Type = EXTOBJECTNAME
 		obj.Proxy = self
@@ -434,10 +439,10 @@ class TMThreadInsert:		#######################################################
 		if initprops[0] == "Custom": obj.setEditorMode("TolCrest", 2)
 
 		# Make attachable
-		if int(FreeCAD.Version()[1]) >= 19:
-			obj.addExtension('Part::AttachExtensionPython')
-		else:
+		if int(FreeCAD.Version()[0]) == 0 and int(FreeCAD.Version()[1]) < 19:
 			obj.addExtension('Part::AttachExtensionPython', obj)
+		else:
+			obj.addExtension('Part::AttachExtensionPython')
 
 		self.Type = INTOBJECTNAME
 		obj.Proxy = self
@@ -744,6 +749,7 @@ class TMThreadVP:		#######################################################
 		return None
 # end class PDThreadVP
 
+### DIALOG BOX #############################################################################
 class TMDialog(QtGui.QDialog):
 	"""Opens dialog window for ThreadMaker object parameters. Pre-loads values from MRU if present.  Results returned =
 	[thrdstandard, stdsize, diameter, pitch, length, taper, clearance, chamfer(bool), left-handed(bool), thrddisable(bool), 
@@ -805,7 +811,7 @@ class TMDialog(QtGui.QDialog):
 		self.popup1.addItems(list(SUPPORTEDSTANDARDS))
 		if self.ts not in list(SUPPORTEDSTANDARDS): self.ts = "Custom"
 		self.popup1.setCurrentIndex(list(SUPPORTEDSTANDARDS).index(self.ts))
-		self.popup1.activated[str].connect(self.onPopup1)
+		self.popup1.activated[int].connect(self.onPopup1)	# changed from [str] since deprecated Qt6
 		self.popup1.setFixedWidth(125)
 		self.popup1.move(120, line)
 
@@ -824,7 +830,7 @@ class TMDialog(QtGui.QDialog):
 			if self.sz not in list(ISO261PDTABLE): self.sz = list(ISO261PDTABLE)[19]
 			self.popup0.setCurrentIndex(list(ISO261PDTABLE).index(self.sz))
 			self.label5.setStyleSheet("color :")
-		self.popup0.activated[str].connect(self.onPopup0)
+		self.popup0.activated[int].connect(self.onPopup0)
 		self.popup0.setFixedWidth(65)
 		self.popup0.move(120, line)
 		if self.ts != "Custom": self.popup0.setFocus()
@@ -845,7 +851,7 @@ class TMDialog(QtGui.QDialog):
 				else: self.pt = "6g"
 			self.popup3.setCurrentIndex(self.ISO965PITCHTOL.index(self.pt))
 			self.label8.setStyleSheet("color :")
-		self.popup3.activated[str].connect(self.onPopup3)
+		self.popup3.activated[int].connect(self.onPopup3)
 		self.popup3.setFixedWidth(50)
 		self.popup3.move(80, line)
 
@@ -865,7 +871,7 @@ class TMDialog(QtGui.QDialog):
 				else: self.ct = "6g"
 			self.popup4.setCurrentIndex(self.ISO965CRESTTOL.index(self.ct))
 			self.label9.setStyleSheet("color :")
-		self.popup4.activated[str].connect(self.onPopup4)
+		self.popup4.activated[int].connect(self.onPopup4)
 		self.popup4.setFixedWidth(50)
 		self.popup4.move(200, line)
 
@@ -893,7 +899,7 @@ class TMDialog(QtGui.QDialog):
 		self.textInput1.setText(str(max(self.p, 0.2)))		# stuff p here even if non custom
 		self.popup2 = QtGui.QComboBox(self)
 		self.popup2.setStyleSheet("background : #ffffff")
-		self.popup2.activated[str].connect(self.onPopup2)
+		self.popup2.activated[int].connect(self.onPopup2)
 		self.popup2.setFixedWidth(50)
 		self.popup2.move(120, line)
 		if self.ts == "Custom": 
@@ -1030,7 +1036,7 @@ class TMDialog(QtGui.QDialog):
 
 	def onPopup1(self, selection):		# Standard selected- set widdgets for sz, d, p, t
 		"""Thread standard popup list """		# size/label5/popup0::tolp/label8/popup3::tolc/lagel9/popup4
-		self.ts = selection		
+		self.ts = list(SUPPORTEDSTANDARDS)[selection]
 		if self.ts == "Custom": 	# Disable sz, p(popup), ct, pt; enable d, p(textbox), t.
 			self.popup0.setDisabled(True)					# popup0 = size 
 			self.label5.setStyleSheet("color : #b0b0b0")
@@ -1073,7 +1079,7 @@ class TMDialog(QtGui.QDialog):
 	# End onPopup1
 
 	def onPopup0(self, selection):		#Size popup- store sz selection, update p(popup2), update d
-		self.sz = selection		
+		self.sz = list(ISO261PDTABLE)[selection]
 		self.popup2.clear()
 		self.popup2.addItems(ISO261PDTABLE[self.sz])
 		if str(self.p) not in ISO261PDTABLE[self.sz]: self.p = float(ISO261PDTABLE[self.sz][0])
@@ -1088,7 +1094,7 @@ class TMDialog(QtGui.QDialog):
 
 	def onPopup2(self, selection):		# Pitch popup- lookup and set d
 		"""Pitch popup list for Custom std"""
-		self.p = float(selection)
+		self.p = float(ISO261PDTABLE[self.sz][selection])
 		if self.ts != "Custom":
 			if self.internal:
 				self.d = float(self.sz[1:]) + iso965IntCrestDev(self.p, self.ct)		# diameter	
@@ -1098,11 +1104,11 @@ class TMDialog(QtGui.QDialog):
 		return
 
 	def onPopup3(self, selection):		# Pitch tolerance popup- lookup and set pt
-		self.pt = selection
+		self.pt = self.ISO965PITCHTOL[selection]
 		return
 
 	def onPopup4(self, selection):		# Crest tolerance popup- lookup and set pt
-		self.ct = selection
+		self.ct = self.ISO965CRESTTOL[selection]
 		if self.ts != "Custom":		
 			if self.internal:
 				self.d = float(self.sz[1:]) + iso965IntCrestDev(self.p, self.ct)		# diameter	
