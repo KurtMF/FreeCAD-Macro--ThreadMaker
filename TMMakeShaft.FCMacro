@@ -1,0 +1,150 @@
+# INDEMNITY: By using this software you agree not to sue me for any reason related to the use of this software.
+#
+# Copyright (c) 2022 Kurt Funderburg, all rights not explicitly relinquished in LGPL reserved.
+#
+#   This program is free software; you can redistribute it and/or modify  
+#   it under the terms of the GNU Lesser General Public License (LGPL)    
+#   as published by the Free Software Foundation; either version 2 of     
+#   the License, or (at your option) any later version.                   
+#                                                                         
+#   This program is distributed in the hope that it will be useful,       
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of       
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         
+#   GNU Library General Public License for more details.                  
+#                                                                         
+#   You should have received a copy of the GNU Library General Public     
+#   License along with this program; if not, write to the Free Software   
+#   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  
+#   USA                                                                   
+import FreeCAD, Part, math, os
+from FreeCAD import Base
+from AttachmentEditor import Commands
+import ThreadMaker.TMClasses as TMClasses
+from ThreadMaker.TMClasses import TMThreadShaft, TMThreadVP, EXTOBJECTNAME
+# For FC IDE Testing
+#from importlib import reload
+#reload(TMClasses)
+
+__title__="ThreadMaker MakeShaft Macro: Generates fully parametric custom or standardized threaded shafts."
+__author__ = "Kurt Funderburg"
+
+# Main Code 		#######################################################
+TEST = False
+doc = App.ActiveDocument
+
+if not TEST:
+	# Launch input dimensions dialog box
+	threadspecs = TMClasses.TMDialog(False)
+	threadspecs.exec_()
+	speclist = threadspecs.result
+	# [Standard, Size, diameter, pitch, length, taper, clearance, chamfer(bool), left-handed(bool), thrddisable(bool), roundroot(bool), pitchtol, cresttol]
+
+	if speclist:		# Make threaded shaft unless dialog cancelled
+		doc.openTransaction("Make Thread Shaft")
+		a = doc.addObject("Part::FeaturePython", EXTOBJECTNAME, None, None, False)
+		doc.commitTransaction()
+		TMThreadShaft(a, speclist)			# Build Thread object with speclist
+		TMThreadVP(a.ViewObject)		# Build View Provider
+		a.setEditorMode('Placement', 0) #non-readonly non-hidden
+
+else: # THREAD KERNEL TEST CODE ##################################################################
+	doc=FreeCAD.getDocument("TMTestDoc")
+	for o in doc.findObjects(): doc.removeObject(o.Name) # !!!!!
+
+	potato=0
+	for d in [1, 2, 4, 6, 8, 12]: #1.0, 1.2, 1.6, 1.8, 2.0, 2.5, 3.0]:
+		for p in [.25, .5, .75, 1, 1.5]: #.2, 0.25, 0.35, .5, .75, 1.0]:
+			for c in [True]:#, False]:
+				a = doc.addObject("Part::FeaturePython", EXTOBJECTNAME, None, None, False)
+				# [Standard, StdSz, diameter, pitch, length, taper, clearance, chamfer(bool), left-handed(bool), thrddisable(bool), 
+				#	roundroot(bool), pitchtol, cresttol]
+				TMThreadShaft(a, ["Custom", "M10", d, p, 6, 0, 0, c, False, False, True, "6g", "6g"])			# Build Thread object
+				TMThreadVP(a.ViewObject)		# Build View Provider
+				a.Visibility = False
+				if a.IsPotato: potato+=1
+	for d in [10, 15, 20, 50, 100]:
+		for p in [1, 1.5, 2, 4, 6, 8]:
+			for c in [True]:#, False]:
+				a = doc.addObject("Part::FeaturePython", EXTOBJECTNAME, None, None, False)
+				# [Standard, StdSz, diameter, pitch, length, taper, clearance, chamfer(bool), left-handed(bool), thrddisable(bool), 
+				#	roundroot(bool), pitchtol, cresttol]
+				TMThreadShaft(a, ["Custom", "M10", d, p, 16, 0, 0, c, False, False, True, "6g", "6g"])			# Build Thread object
+				TMThreadVP(a.ViewObject)		# Build View Provider
+				a.Visibility = False
+				if a.IsPotato: potato+=1
+	doc.recompute()
+	print("Potatoes: " + str(potato))
+
+#TESTING
+# PASS 6/9/22: Property Mgmt: computation of Dmaj from P, Tolerances, switching from custom to standard modes
+# PASS 6/9/22: Object Behavior: Active body on creation or not; dbl-click response; avoids re-calc of thread geo. when not needed;
+#	  works with P and PD ops, incl. array/pattern tool
+# PASS 6/9/22: Grace on Failure:  Object icon flagged, useful message printed, object recoverable and undoable
+# Geometry Testing: All combinations of D, P, L along with Taper, Chamfer, Lefty, and Thread Disable.
+# PASS 6/9/22: EXT/INT	for d in [1.0, 1.2, 1.6, 1.8, 2.0, 2.5, 3.0]:	for p in [.2, 0.25, 0.35, .5, .75, 1.0]:	for c in [False, True]:  for t in [0.0, 2.0]
+# PASS 6/9/22: EXT/INT	for d in [5.0, 7.5, 10, 20, 50]: 	for p in [1, 1.5, 2, 4, 6, 8]:	for c in [False, True]:  for t in [0.0, 2.0]
+
+#TODO ######################################################################
+# ? Add ISO tapered standard with Whitford profile.
+# [Fixed, use separate vpad to lift thread body off base floor just enough to eliminate fuse errors] 
+#		Chamfar base fails on some pitch/diameter values.  shaft +107, thrd body +37, topcutter +207, cham or bevel fbase -107, 
+# [Done] Official 'yellow' FC Icon colors: #fce94f; #edd400; #c4a000; #302b00
+# [Fixed] Base bevel fails for pitch >=6.0 while D<50.  ISO261 disallows 6.0+ pitch for D<65.  Still fix bevel.
+# [Done] Add ThreadInt for threaded inserts.
+# [Fixed] Smallest pitch was being selected for default on new std sz.  Should be largest.
+
+# FIXES IN BETA2 RELEASE
+# [Fixed: removed call to removeSplitter()] Takes 3x longer (>3min.) for 6x0.5-100 generation than FW.  Suspect using bool common to trim is cause.
+# [Done] Replaced trim-by-cone with trim-by-cutter in thread execute()
+# FIXES IN BETA RELEASE
+# [not supported] PD compatiblity: poor support for it.  Can't render cosmetic thread as feature in a Body using color.   Can't
+#	interoperate with PD pattern tools. Can't find support to make this work as PartDesign::AdditiveFeature. 
+#	In PD, works most of the time with boolean fuse, and dragging into Body (BaseFeature)
+# [not supported] PD compatiblity: Error on dbl-click: getEditDialog() not implemented on F.A.P..  
+# [done] Packaging: use subfolder ../Macro/ThreadMaker
+# [Added] Standardize profile: ISO 68-1M.  Add chkbox for rounded root?  Yes!
+# [FC not supported] Macro editor d ialog won't show/support subfolders in macro folder. :-(
+#	For macro packaging, put all files in subfolder under macros, except actual 4 macro files (ext, int, toggle thread on, off)
+# [Done] (Trivial macro).  Add Enable Thread toggle all on/off buttons.  For performance.
+# [Solved using AttachmentEditor.Commands] When existing body active, launch attachment dialog.  
+# [Solved]  Make like added PD Cyl w/ noattach = noattach & noposition.  w/ xyattach = attach & noposition, independent relative placement.
+# [Solved]  Make like PD Cyl unfuses & refuses when moved.  At first solids move together, after enter original solid released from move.
+# [Solved by using makeSolid() on completed shape and removing removeSplitter()] Solid doesn't work in Part or PD booleans with other solids :-(  
+# [Solved App.ActiveDocument.openTransaction] Solid won't disappear on undo
+# [solved added onChange method to thread class] Use onChanged method in PDThreadShaft to override thread re-generation when not required
+# [Solved for Part by chg. parent class to Part::FeaturePython] Error on dbl-click: getEditDialog() not implemented on F.A.P..  
+# [Solved] Drive by OD, not ID.
+# [Tweaked] Dialog warnings on dialog not report view.
+
+#STANDARDS  & IMPLEMENTATION
+# ISO 261 metric thread standard, general plan, refers to  ISO 68-M, ISO 965-1 tolerances, ISO 724 dimensions
+#	ISO 261 standard should be fully compatible with ASME B1.13M
+#	formula (table) for preferred P for each preferred D.
+# ISO 68-1M:  Profile standard used in thread standards.  
+#	Ext thread allows optional rounded root: lower root by fillet R (>=.125P) resulting in thinner I.D.  
+# 	Each size has a preferred pitch, course pitch, and 1 or more fine pitches
+# 	Each size has a short, normal, long engagement length; for short decr. ext thrd tolerance; for long incr. it (larger D for short)
+# ISO 724 metric standard thread, dimensions.
+#	*** Dp = Dnom - 3sqrt3/8*P; Dmin = Dnom - 5sqrt3/8P   (Dnom = Dmaj)
+# ISO 965-1: Tol class std used by both B1.13M and 261.
+#	Same specs and formulae as listed below for B1.13, except no restriction to 6H6H, 4g6g, 6g6g tolerance grades.
+#	Formula to compute deviation from tolerance grade (ie- 6g means Tol. Grade 6 plus Tol. Position g).
+#	Pitch Tol. deviation shifts entire thread profile inward, lowering Dmin.  
+#	Crest Tol. deviation only shifts profile outer edge inward, lowring Dmaj.
+
+# ANSI/ASME B1.13M-2005	(Reaffirmed 2015):  Thread standard using ISO 68-1M as profile standard.
+#	Preferred pitch for gen purpose is course pitch Table 4., plus Fine pitch list for gen purpose equipment Table 5.
+#	Unusual pitch list (from ISO 261) Table 6.  Table 6 includes 4 & 5 (allegedly)
+#	Only H, g, h used in B1.13.
+#	Tol. grade 6 specified for normal length of engagement. 
+#	Int B1.13 threads are 6H6H: no 'allowance' allowed.
+#	*** Section 6 has formulae for given TP (position), TG (grade), P (pitch), D(dia.)
+#		F.D.(P, TP); Nom.L(P, D); T.D.(P, TG); 
+#	Int Thrd only 6H6H.  Ext Thrd 6g6g, 4g6g, 6h6h.  Radio buttons?
+
+# NPT E: ANSI/ASME B1.20.1			ISO 68 compat.			Ext./Int. NPT 1/16 - 24 in.
+
+# ISO Taper:							Whitford
+
+# DIN 975 (FW): replaced by 976!  1M long standard!  
+

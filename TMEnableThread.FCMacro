@@ -1,0 +1,9 @@
+from FreeCAD import Base
+
+__title__="ThreadMaker Threaded Shafts and Inserts Disable Thread Macro"
+__author__ = "Kurt Funderburg"
+
+for objThread in App.ActiveDocument.findObjects("Part::Feature", "Thread(Ext|Int)"):
+	if objThread.DisableThrd:	objThread.DisableThrd = False
+
+App.ActiveDocument.recompute()
