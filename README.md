@@ -31,19 +31,3 @@ created with this macro.  If you move or delete it, all ThreadMaker solids will 
 
 Lastly, read the ThreadMaker User Guide (TMUserGuide.pdf) to quickly learn to generate fasteners for 
 ISO 261 standard threads, or generate any other kind of threads based on the ISO 68-1M thread profile.  
-
-TMUserGuide.pdf is here: https://drive.google.com/file/d/1m8EGpg5S-jCm2kR9DDi3Mf0tc6tt2I8Z/view?usp=sharing
-
-CONTENTS ADDED TO FREECAD MACRO DIRECTORY:
-06/11/2022  07:48 PM    <DIR>          ThreadMaker
-06/01/2022  09:57 PM               309 TMDisableThread.FCMacro
-06/01/2022  09:57 PM               305 TMEnableThread.FCMacro
-06/11/2022  07:28 PM             2,407 TMMakeInsert.FCMacro
-06/11/2022  07:30 PM             9,463 TMMakeShaft.FCMacro
-06/10/2022  03:57 PM             3,025 TMREADME.txt
-CONTENTS OF ADDED ThreadMaker DIRECTORY:
-06/11/2022  06:33 PM            59,078 TMClasses.py
-06/10/2022  01:35 PM             1,488 TMIconDisable.png
-06/10/2022  01:35 PM             1,413 TMIconEnable.png
-06/10/2022  01:34 PM             1,148 TMIconInsert.png
-06/10/2022  01:34 PM             1,053 TMIconShaft.png
