@@ -20,3 +20,9 @@ for ISO 261 standard threads, or generate any other kind of threads based on the
 ### 1.1
 * Fix QComboBox error in Linux FC using full release higher Qt than Windows FC
 * Fix warning about deprecated proxy in FC 1.x
+### 1.2
+* Fix deprecation warning on exec_ function in FCMacro files
+* Fix Color of selected text in select list
+* Fix color of text in text boxes
+* Fix color of text in list boxes
+* Fix size of NPT/ISO buttons

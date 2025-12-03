@@ -35,7 +35,7 @@ doc = App.ActiveDocument
 if not TEST:
 	# Launch input dimensions dialog box
 	threadspecs = TMClasses.TMDialog(False)
-	threadspecs.exec_()
+	threadspecs.exec()
 	speclist = threadspecs.result
 	# [Standard, Size, diameter, pitch, length, taper, clearance, chamfer(bool), left-handed(bool), thrddisable(bool), roundroot(bool), pitchtol, cresttol]
 

@@ -21,6 +21,12 @@
 #	1.1
 #		* Fix deprecated refernece to activated signal on QComboBox which broke Linux FC.
 #		* Fix deprecated proxy warning in FC 1.x.
+#	1.2		Defects in dialog v 1.0.0+ with themes (CL=Classic Theme, DK=Dark, LT=Light)
+#		* Fix deprecation warning on exec_ function in FCMacro files	ALL		1.2.0, 1.1.0, 1.0.1, 1.0.0
+#		* Fix Color of selected text in select list						CL		1.2.0, 1.1.0, 1.0.1
+#		* Fix color of text in text boxes								CL		1.1.0
+#		* Fix color of text in list boxes								DK		1.2.0, 1.1.0, 1.0.1, 1.0.0
+#		* Fix size of NPT/ISO buttons									DK,LT	1.2.0, 1.1.0, 1.0.1, 1.0.0
 
 import FreeCAD, Part, math, os
 from FreeCAD import Base
@@ -29,7 +35,7 @@ from PySide import QtGui, QtCore
 __title__ = "ThreadMaker: Fully parametric threaded shafts for supported standards or custom user specs."
 __author__ = "Kurt Funderburg"
 
-MRUPATH = "User parameter:BaseApp/Macro/ThreadMaker/MRU"		# getParam(MRUPATH) stores last accepted values of dialog
+MRUPATH = "User parameter:BaseApp/Macro/ThreadMaker/MRU"	# getParam(MRUPATH) stores last accepted values of dialog
 EXTOBJECTNAME = "ThreadExt"			# Thread object name, also object label prefix.  Will also use "ThreadInsert"
 INTOBJECTNAME = "ThreadInt"			
 SUPPORTEDSTANDARDS = { 			# Dictionary constant of { Name : Taper(float) }
@@ -808,6 +814,7 @@ class TMDialog(QtGui.QDialog):
 		# if ts then textInput = listbox with ts prepouplated
 		self.popup1 = QtGui.QComboBox(self)
 		self.popup1.setStyleSheet("background : #ffffff")
+		self.popup1.setStyleSheet("color :")
 		self.popup1.addItems(list(SUPPORTEDSTANDARDS))
 		if self.ts not in list(SUPPORTEDSTANDARDS): self.ts = "Custom"
 		self.popup1.setCurrentIndex(list(SUPPORTEDSTANDARDS).index(self.ts))
@@ -822,6 +829,7 @@ class TMDialog(QtGui.QDialog):
 		# if sz then prepouplate.  if Custom then clear else 
 		self.popup0 = QtGui.QComboBox(self)
 		self.popup0.setStyleSheet("background : #ffffff")
+		self.popup0.setStyleSheet("color :")
 		self.popup0.addItems(list(ISO261PDTABLE))
 		if self.ts == "Custom":
 			self.popup0.setDisabled(True)
@@ -841,6 +849,7 @@ class TMDialog(QtGui.QDialog):
 		self.label8.move(20, line)
 		self.popup3 = QtGui.QComboBox(self)
 		self.popup3.setStyleSheet("background : #ffffff")
+		self.popup3.setStyleSheet("color :")
 		self.popup3.addItems(self.ISO965PITCHTOL)
 		if self.ts == "Custom":
 			self.label8.setStyleSheet("color : #b0b0b0")
@@ -861,6 +870,7 @@ class TMDialog(QtGui.QDialog):
 		# if sz then prepouplate.  if Custom then clear else 
 		self.popup4 = QtGui.QComboBox(self)
 		self.popup4.setStyleSheet("background : #ffffff")
+		self.popup4.setStyleSheet("color :")
 		self.popup4.addItems(self.ISO965CRESTTOL)
 		if self.ts == "Custom":
 			self.label9.setStyleSheet("color : #b0b0b0")
@@ -899,6 +909,7 @@ class TMDialog(QtGui.QDialog):
 		self.textInput1.setText(str(max(self.p, 0.2)))		# stuff p here even if non custom
 		self.popup2 = QtGui.QComboBox(self)
 		self.popup2.setStyleSheet("background : #ffffff")
+		self.popup2.setStyleSheet("color :")
 		self.popup2.activated[int].connect(self.onPopup2)
 		self.popup2.setFixedWidth(50)
 		self.popup2.move(120, line)
@@ -935,14 +946,20 @@ class TMDialog(QtGui.QDialog):
 		if self.ts != "Custom":
 			self.textInput3.setDisabled(True)
 		# ISO button
-		self.pushButton1 = QtGui.QPushButton('ISO', self)
+		self.pushButton1 = QtGui.QToolButton()
 		self.pushButton1.clicked.connect(self.onPushButton1)
-		self.pushButton1.setMaximumWidth(30)
+		self.pushButton1.setToolButtonStyle(QtCore.Qt.ToolButtonTextOnly)
+		self.pushButton1.setText("ISO")
+		self.pushButton1.setFixedSize(30, 26)
+		self.pushButton1.setParent(self)
 		self.pushButton1.move(180, line)
 		# NPT button
-		self.pushButton2 = QtGui.QPushButton('NPT', self)
+		self.pushButton2 = QtGui.QToolButton()
 		self.pushButton2.clicked.connect(self.onPushButton2)
-		self.pushButton2.setMaximumWidth(30)
+		self.pushButton2.setToolButtonStyle(QtCore.Qt.ToolButtonTextOnly)
+		self.pushButton2.setText("NPT")
+		self.pushButton2.setFixedSize(30, 26)
+		self.pushButton2.setParent(self)
 		self.pushButton2.move(220, line)
 
 		# Radial clearance input box
